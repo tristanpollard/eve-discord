@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/96b6040e-675d-47bc-b664-85615c7886e4/resourceGroups/eve/providers/Microsoft.Web/sites/eve-discord",
+    "appService.deploySubpath": ""
+}
