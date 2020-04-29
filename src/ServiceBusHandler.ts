@@ -9,9 +9,9 @@ export interface IServiceBusAction {
 }
 
 export interface IServiceBusDiscordAction extends IServiceBusAction {
-    guild: string
-    channel: string
-    sender: string
+    guild?: string
+    channel?: string
+    sender?: string
 }
 
 export interface IDiscordSyncAction {
@@ -31,8 +31,8 @@ export default class ServiceBusHandler {
 
     discord: Discord.Client
     serviceBusClient = ServiceBusClient.createFromConnectionString(process.env.SERVICE_BUS_CONNECTION_STRING)
-    trawlerClient = this.serviceBusClient.createQueueClient('trawler')
-    serviceBusSender = this.trawlerClient.createSender()
+    apiClient = this.serviceBusClient.createQueueClient(process.env.SERVICE_BUS_API_NAME)
+    apiSender = this.apiClient.createSender()
     discordQueueClient: QueueClient
     discordQueueReceiver: Receiver
 
@@ -40,8 +40,14 @@ export default class ServiceBusHandler {
         this.discord = discord
     }
 
+    sendMessage = (message: IServiceBusDiscordAction) => {
+        this.apiSender.send({
+            body: message
+        })
+    }
+
     begin = () => {
-        this.discordQueueClient = this.serviceBusClient.createQueueClient('discord');
+        this.discordQueueClient = this.serviceBusClient.createQueueClient(process.env.SERVICE_BUS_DISCORD_NAME);
         this.discordQueueReceiver = this.discordQueueClient.createReceiver(ReceiveMode.peekLock);
         this.discordQueueReceiver.registerMessageHandler(this.messageHandler, this.messageErrorHandler)
     }
@@ -86,6 +92,7 @@ export default class ServiceBusHandler {
 
     messageHandler = async (message: ServiceBusMessage) => {
         const action: IServiceBusAction = message.body
+        console.log(action, action.data)
         try {
             await this.handleMessage(action)
             console.log("handled messaged!", action.group)

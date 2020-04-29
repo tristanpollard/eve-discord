@@ -22,7 +22,7 @@ server.listen(port, (error) => {
 dotenv.config();
 
 axios.defaults.baseURL = process.env.API_BASE_URL;
-axios.defaults.timeout = 5000; // 5s
+axios.defaults.timeout = 15000; // 15s
 axios.defaults.params = { code: process.env.API_KEY }
 
 export default new DiscordBot().begin()

@@ -54,9 +54,9 @@ export interface ISender {
     username: string
     nickname?: string
     discriminator: string
-    roles: Array<string>
-    channel: string
-    guild: string
+    roles?: Array<string>
+    channel?: string
+    guild?: string
     administrator: boolean
 }
 
@@ -75,7 +75,7 @@ const getCommand = (name: string): Command | undefined => {
 }
 
 export const runCommand = (request: ICommandRequest): Promise<CommandResponse> => {
-    return axios.post('discord-command', { ...request, code: process.env.API_KEY })
+    return axios.post('discord-command', { ...request }, { params: { code: process.env.API_KEY }})
         .then(data => {
             return data.data
         })
@@ -105,10 +105,10 @@ export const handleCommand = (message: Message): Promise<CommandResponse> | void
             user_id: message.author.id,
             username: message.author.username,
             discriminator: message.author.discriminator,
-            roles: message.member.roles.cache.map(role => role.id),
-            channel: message.channel.id,
-            guild: message.guild.id,
-            administrator: message.member.hasPermission("ADMINISTRATOR")
+            roles: message.member?.roles.cache.map(role => role.id),
+            channel: message.channel?.id,
+            guild: message.guild?.id,
+            administrator: message.member?.hasPermission("ADMINISTRATOR") ?? false
         }
         const mentions: IMentions = {
             users: message.mentions.users?.map(user => {
@@ -137,8 +137,8 @@ export const handleCommand = (message: Message): Promise<CommandResponse> | void
             sender: sender,
             mentions,
             flags,
-            guild: { id: message.guild.id },
-            channel: { id: message.channel.id }
+            guild: { id: message.guild?.id },
+            channel: { id: message.channel?.id }
         }
         if (command.function) {
             return command.function(commandRequest, message)
