@@ -3,8 +3,7 @@ import { ICommandRequest } from '.';
 import { IServiceBusAction } from '../ServiceBusHandler';
 
 export interface Command {
-    name: string
-    function?: (request: ICommandRequest, message?: Message) => Promise<CommandResponse>,
+    command: string
     minArgs?: number,
     usage: string
 }

@@ -1,11 +1,11 @@
-import Discord, { TextChannel, Guild } from 'discord.js';
-import { handleCommand } from './commands';
+import Discord, { Guild } from 'discord.js';
+import { CommandHandler } from './commands';
 import ServiceBusHandler from './ServiceBusHandler'
-import { serverEmbedToDiscordEmbed } from './helpers'
 
 export default class DiscordBot {
     client: Discord.Client = new Discord.Client()
     serviceBusHandler: ServiceBusHandler = new ServiceBusHandler(this.client)
+    commandHandler: CommandHandler = new CommandHandler(this.client, this.serviceBusHandler)
 
     bulkSetGuilds = () => {
       const guildIds = this.client.guilds.cache.reduce((ids: Array<string>, guild: Guild) => {
@@ -30,45 +30,9 @@ export default class DiscordBot {
         this.bulkSetGuilds()
         setTimeout(this.bulkSetGuilds, 60*60*1000)
       });
-      
-      this.client.on('message', (msg: Discord.Message) => {
-        if (msg.author.bot) {
-          return
-        }
 
-        const command = handleCommand(msg);
-        if (command) {
-          command.then(response => {
-            const reply = response.reply
-            if (reply) {
-              const replyMsg = reply.embed ? serverEmbedToDiscordEmbed(reply.embed) : reply.message;
-              msg.reply(replyMsg);
-            }
+      this.commandHandler.begin()
       
-            const dm = response.dm
-            if (dm) {
-              const dmMsg = dm.embed ? serverEmbedToDiscordEmbed(dm.embed) : dm.message
-              msg.author.send(dmMsg)
-            }
-      
-            const channel = response.channelResponse
-            if (channel) {
-              const channelMsg = channel.response.embed ? serverEmbedToDiscordEmbed(channel.response.embed) : channel.response.message
-              const discordChannel = this.client.channels.cache.get(channel.channel)
-              const textChannel = discordChannel as TextChannel
-              if (textChannel) {
-                textChannel.send(channelMsg)
-              }
-            }
-      
-            const serviceBusMessages = response.serviceBusMessages
-            if (serviceBusMessages) {
-              this.serviceBusHandler.apiSender.sendBatch(serviceBusMessages.map(el => { return { body: el } }))
-            }
-          });
-        }
-      });
-
       this.client.on("guildCreate", function(guild: Discord.Guild){
         console.log('joined guild: ' + guild.id)
         this.serviceBusHandler.sendMessage({
